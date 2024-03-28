@@ -1,60 +1,67 @@
 package ru.practicum.http.client.hit;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import ru.practicum.http.client.base.BaseClient;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.dto.HitDto;
+import ru.practicum.dto.StatsDto;
 
+import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-@Service
-public class StatsClient extends BaseClient {
+@Component
+@Slf4j
+public class StatsClient {
+
+    private final String statsServerUrl;
+    private final RestTemplate restTemplate;
 
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @Autowired
-    public StatsClient(@Value("${stat.server.url}") String serverUrl, RestTemplateBuilder builder) {
-        super(
-                builder
-                        .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl))
-                        .requestFactory(HttpComponentsClientHttpRequestFactory::new)
-                        .build()
-        );
+    public StatsClient(@Value("${stat.server.url}") String statsServerUrl) {
+        this.statsServerUrl = statsServerUrl;
+        restTemplate = new RestTemplate();
     }
 
-    public ResponseEntity<Object> createHit(HitDto dto) {
-        return post(dto);
+    public void createHit(String app, HttpServletRequest request) {
+        HitDto hitDto = HitDto.builder()
+                .app(app)
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now())
+                .build();
+        log.info("Send request data to stats-service (app = {}, uri = {}, ip = {})",
+                hitDto.getApp(),
+                hitDto.getUri(),
+                hitDto.getIp(),
+
+        restTemplate.postForObject(statsServerUrl + "/hit", hitDto, Object.class));
     }
 
-    public ResponseEntity<Object> getStatistic(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
-        String startString = start.format(DTF);
-        String endString = end.format(DTF);
-        StringBuilder url = new StringBuilder("?");
+    public List<StatsDto> getStatistics(LocalDateTime start,
+                                          LocalDateTime end,
+                                          List<String> uris,
+                                          Boolean unique) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl + "/stats");
+        builder.queryParam("start", DTF.format(start));
+        builder.queryParam("end", DTF.format(end));
+        if (uris != null)
+            builder.queryParam("uris", String.join(",", uris));
+        if (unique != null)
+            builder.queryParam("unique", unique);
+        URI uri = builder.build(false).toUri();
 
-        if (unique == null) {
-            unique = false;
+        StatsDto[] stats = restTemplate.getForObject(uri, StatsDto[].class);
+
+        if (stats != null) {
+            return new ArrayList<>(Arrays.asList(stats));
+        } else {
+            return Collections.emptyList();
         }
-        if (uris != null) {
-            for (String uri : uris) {
-                url.append("&uris=").append(uri);
-            }
-            url.append("&");
-        }
-
-        Map<String, Object> parameters = Map.of(
-                "start", startString,
-                "end", endString,
-                "unique", unique
-        );
-
-        return get("/stats" + url + "start={start}&end={end}&unique={unique}", parameters);
     }
 }
