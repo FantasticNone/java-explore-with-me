@@ -23,7 +23,7 @@ public class StatsClient {
 
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public StatsClient(@Value("${stat.server.url}") String statsServerUrl) {
+    public StatsClient(@Value("${stats.server.url}") String statsServerUrl) {
         this.statsServerUrl = statsServerUrl;
         restTemplate = new RestTemplate();
     }
