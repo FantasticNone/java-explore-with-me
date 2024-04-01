@@ -1,7 +1,6 @@
 package ru.practicum.stats.server.model;
 
 import lombok.*;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
