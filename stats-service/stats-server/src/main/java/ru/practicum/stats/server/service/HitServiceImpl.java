@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
 import ru.practicum.stats.server.exception.IncorrectDataException;
-import ru.practicum.stats.server.exception.IpIsNullException;
 import ru.practicum.stats.server.mapper.EndpointHitMapper;
 import ru.practicum.stats.server.model.EndpointHit;
 import ru.practicum.stats.server.repository.HitRepository;
@@ -25,9 +24,6 @@ public class HitServiceImpl implements HitService {
     @Override
     public HitDto createHit(HitDto hitDto) {
 
-        if (hitDto.getIp() == null || hitDto.getIp().isEmpty()) {
-            throw new IpIsNullException("IP is null");
-        }
         hitRepository.save(toEndpointHit(hitDto));
         return hitDto;
     }
@@ -46,8 +42,8 @@ public class HitServiceImpl implements HitService {
             endpointHits = hitRepository.findByTimestampAndUris(start, end, uris);
         }
 
-            stats = EndpointHitMapper.toResponse(endpointHits, unique);
+        stats = EndpointHitMapper.toResponse(endpointHits, unique);
 
-            return stats;
+        return stats;
     }
 }

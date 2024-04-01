@@ -8,7 +8,6 @@ import ru.practicum.stats.server.model.EndpointHit;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Repository
 public interface HitRepository extends JpaRepository<EndpointHit, Long> {
 
     @Query("SELECT e FROM EndpointHit AS e " +
