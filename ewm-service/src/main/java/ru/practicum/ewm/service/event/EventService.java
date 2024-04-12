@@ -16,6 +16,8 @@ public interface EventService {
 
     EventDto getEvent(long userId, long eventId);
 
+    EventDto updateEvent(long userId, long eventId, NewEventDto newEventDto);
+
     Long getEventViews(Event event);
 
     Map<Long, Long> getEventsViews(List<Event> events);

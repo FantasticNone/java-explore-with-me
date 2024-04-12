@@ -40,8 +40,16 @@ public class EventPrivateController {
     @GetMapping("/{userId}/events/{eventId}")
     public EventDto getEvent(@PathVariable long userId,
                              @PathVariable long eventId) {
-        log.info("Get user event (user id = {}, event id = {})", userId, eventId);
+        log.info("Private: getting user event (user id = {}, event id = {})", userId, eventId);
         return eventService.getEvent(userId, eventId);
+    }
+
+    @PatchMapping("/{userId}/events/{eventId}")
+    public EventDto updateEvent(@PathVariable long userId,
+                                @PathVariable long eventId,
+                                @Validated @Valid @RequestBody NewEventDto event) {
+        log.debug("Private: updating event by id : {}, by user id: {}",eventId, userId);
+        return eventService.updateEvent(userId, eventId, event);
     }
 
 }
