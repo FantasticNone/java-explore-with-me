@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class EventMapper {
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     public static Event toEventFromNewEvent(NewEventDto event, User user, Category category, LocalDateTime createdOn) {
         return Event.builder()
                 .initiator(user)
@@ -37,6 +38,7 @@ public class EventMapper {
                 .title(event.getTitle())
                 .build();
     }
+
     public EventDto toEventDtoFromEvent(Event event) {
         UserDto user = UserMapper.toUserDto(event.getInitiator());
         return EventDto.builder()

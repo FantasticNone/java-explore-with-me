@@ -2,9 +2,7 @@ package ru.practicum.ewm.mapper;
 
 import lombok.experimental.UtilityClass;
 import ru.practicum.ewm.dto.compilation.CompilationDto;
-import ru.practicum.ewm.dto.compilation.NewCompilationDto;
 import ru.practicum.ewm.model.Compilation;
-import ru.practicum.ewm.model.event.Event;
 
 import java.util.List;
 import java.util.Map;

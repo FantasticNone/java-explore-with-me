@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.UserDto;
 import ru.practicum.ewm.service.user.UserService;
 
-import javax.validation.Valid;
 import java.util.List;
 
 @RestController

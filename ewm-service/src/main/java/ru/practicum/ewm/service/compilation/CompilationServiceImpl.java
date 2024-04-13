@@ -45,7 +45,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     }
 
-   @Override
+    @Override
     @Transactional
     public void deleteCompilation(Long compId) {
         Compilation compilation = compilationRepository.findById(compId)
@@ -94,8 +94,8 @@ public class CompilationServiceImpl implements CompilationService {
             compilation.setTitle(updateCompilationRequest.getTitle());
 
 
-            Compilation newCompilation = compilationRepository.save(compilation);
-            return CompilationMapper.toCompilationDto(newCompilation, getEventsViewsByCompilation(newCompilation));
+        Compilation newCompilation = compilationRepository.save(compilation);
+        return CompilationMapper.toCompilationDto(newCompilation, getEventsViewsByCompilation(newCompilation));
     }
 
     public Map<Long, Long> getEventsViewsByCompilation(Compilation compilation) {

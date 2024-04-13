@@ -3,8 +3,6 @@ package ru.practicum.ewm.model;
 import lombok.*;
 
 import javax.persistence.*;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Size;
 
 @AllArgsConstructor
 @NoArgsConstructor

@@ -5,7 +5,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.dto.category.CategoryDto;
 import ru.practicum.ewm.dto.category.NewCategoryDto;
-import ru.practicum.ewm.exceptions.ConditionsViolationException;
 import ru.practicum.ewm.exceptions.ConflictDataException;
 import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.CategoryMapper;
@@ -13,7 +12,6 @@ import ru.practicum.ewm.model.Category;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.repository.CategoriesRepository;
 import ru.practicum.ewm.repository.EventsRepository;
-import ru.practicum.ewm.service.category.CategoryService;
 
 import javax.transaction.Transactional;
 import java.util.List;
@@ -47,6 +45,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category newCategory = categoriesRepository.save(category);
         return CategoryMapper.toCatDto(newCategory);
     }
+
     @Override
     @Transactional
     public void deleteCategory(long categoryId) {
@@ -58,6 +57,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
         categoriesRepository.deleteById(categoryId);
     }
+
     @Override
     public List<CategoryDto> getCategories(int from, int size) {
         if (from < 0 || size < 0) {

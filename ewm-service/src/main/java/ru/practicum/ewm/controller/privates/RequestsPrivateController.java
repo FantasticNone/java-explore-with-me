@@ -27,6 +27,7 @@ public class RequestsPrivateController {
         log.info("Private: making request by user with id: {} to event with id: {}", userId, eventId);
         return requestService.createParticipation(userId, eventId);
     }
+
     @GetMapping("/{userId}/requests")
     public List<RequestDto> getRequest(@PathVariable long userId) {
         log.info("Private: getting user requests");
@@ -35,14 +36,14 @@ public class RequestsPrivateController {
 
     @PatchMapping("/{userId}/requests/{requestId}/cancel")
     public RequestDto patchRequest(@PathVariable long userId,
-                                                             @PathVariable long requestId) {
+                                   @PathVariable long requestId) {
         log.info("Private: cancelling user with id : {} request with id: {}", userId, requestId);
         return requestService.cancelRequest(userId, requestId);
     }
 
     @GetMapping("/{userId}/events/{eventId}/requests")
     public List<RequestDto> getEventRequests(@PathVariable long userId,
-                                                          @PathVariable long eventId) {
+                                             @PathVariable long eventId) {
         log.info("Private: getting requests to user with id: {} event with id: {}", userId, eventId);
         return eventService.getEventRequests(userId, eventId);
     }
