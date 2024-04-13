@@ -1,10 +1,10 @@
 package ru.practicum.ewm.service.event;
 
-import ru.practicum.ewm.dto.event.EventDto;
-import ru.practicum.ewm.dto.event.EventShortDto;
-import ru.practicum.ewm.dto.event.NewEventDto;
+import ru.practicum.ewm.dto.event.*;
+import ru.practicum.ewm.dto.request.RequestDto;
 import ru.practicum.ewm.model.event.Event;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +16,17 @@ public interface EventService {
 
     EventDto getEvent(long userId, long eventId);
 
-    EventDto updateEvent(long userId, long eventId, NewEventDto newEventDto);
+    EventDto updateEvent(long userId, long eventId, UpdateEventUserRequest newEventDto);
+
+    List<RequestDto> getEventRequests(long userId, long eventId);
+
+    List<EventDto> getEventsByAdmin(List<Long> users, List<String> states, List<Long> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size);
+
+    EventDto updateEventAdmin(long eventId, UpdateEventAdminRequest updateDto);
+
+    List<EventShortDto> getEventsByPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart, LocalDateTime rangeEnd, boolean onlyAvailable, String sort, int from, int size);
+
+    EventDto getEventByPublic(Long eventId);
 
     Long getEventViews(Event event);
 

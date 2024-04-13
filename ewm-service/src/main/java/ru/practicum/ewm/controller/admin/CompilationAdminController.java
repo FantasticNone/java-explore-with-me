@@ -7,7 +7,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.compilation.CompilationDto;
 import ru.practicum.ewm.dto.compilation.NewCompilationDto;
-import ru.practicum.ewm.service.CompilationService;
+import ru.practicum.ewm.service.compilation.CompilationService;
 
 import javax.validation.Valid;
 
@@ -25,7 +25,7 @@ public class CompilationAdminController {
         return compilationService.createCompilation(newCompilationDto);
     }
 
-   /* @DeleteMapping("/{compId}")
+   @DeleteMapping("/{compId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public void deleteCompilation(@PathVariable Long compId) {
         log.info("Admin: deleting compilation (comp id = {})", compId);
@@ -39,5 +39,5 @@ public class CompilationAdminController {
                 compId, updateCompilationDto.getEvents(), updateCompilationDto.getPinned(), updateCompilationDto.getTitle());
 
         return compilationService.updateCompilation(compId, updateCompilationDto);
-    }*/
+    }
 }

@@ -55,7 +55,7 @@ public class EventMapper {
                 .publishedOn(event.getPublishedOn() != null ? event.getPublishedOn().format(DTF) : null)
                 .title(event.getTitle())
                 .requestModeration(event.getRequestModeration())
-                //.views(Long.valueOf(event.getViews() != null ? event.getViews() : 0))
+                .views(Long.valueOf(event.getViews() != null ? event.getViews() : 0))
                 .build();
     }
 
@@ -102,9 +102,15 @@ public class EventMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<EventShortDto> toCountListShortDto(List<Event> events, Long views) {
+    /*public static List<EventShortDto> toCountListShortDto(List<Event> events, Long views) {
         return events.stream()
                 .map(event -> EventMapper.toEventShortDto(event, views))
+                .collect(Collectors.toList());
+    }*/
+
+    public static List<EventDto> toListDto(List<Event> events, Map<Long, Long> views) {
+        return events.stream()
+                .map(event -> EventMapper.toDtoWithViews(event, views.get(event.getId())))
                 .collect(Collectors.toList());
     }
 

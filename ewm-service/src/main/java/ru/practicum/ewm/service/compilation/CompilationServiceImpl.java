@@ -1,10 +1,12 @@
-package ru.practicum.ewm.service;
+package ru.practicum.ewm.service.compilation;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.compilation.CompilationDto;
 import ru.practicum.ewm.dto.compilation.NewCompilationDto;
+import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.CompilationMapper;
 import ru.practicum.ewm.model.Compilation;
 import ru.practicum.ewm.model.event.Event;
@@ -15,6 +17,7 @@ import ru.practicum.ewm.service.event.EventService;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,33 +45,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     }
 
-    public Map<Long, Long> getEventsViewsByCompilation(Compilation compilation) {
-        return eventsService.getEventsViews(compilation.getEvents());
-    }
-
-
-
-
-        /*List<Event> events = Collections.emptyList();
-
-        if (newCompilationDto.getEvents() != null && !newCompilationDto.getEvents().isEmpty())
-            events = eventsRepository.findAllById(newCompilationDto.getEvents());
-
-        Compilation compilation = Compilation.builder()
-                .events(events)
-                .pinned(newCompilationDto.getPinned())
-                .title(newCompilationDto.getTitle())
-                .build();
-
-        try {
-            Compilation newCompilation = compilationRepository.saveAndFlush(compilation);
-            return CompilationMapper.toDto(newCompilation, getEventsViewsByCompilation(newCompilation));
-        } catch (DataIntegrityViolationException exception) {
-            throw new FieldValueExistsException(exception.getMessage());
-        }*/
-    }
-
-   /* @Override
+   @Override
     @Transactional
     public void deleteCompilation(Long compId) {
         Compilation compilation = compilationRepository.findById(compId)
@@ -88,7 +65,7 @@ public class CompilationServiceImpl implements CompilationService {
 
         List<Compilation> compilations = compilationRepository.findAllWherePinned(pinnedFilter, PageRequest.of(from / size, size));
 
-        return CompilationMapper.toDto(compilations, mapEventsViewsByCompilations(compilations));
+        return CompilationMapper.toListDto(compilations, mapEventsViewsByCompilations(compilations));
     }
 
     @Override
@@ -96,14 +73,14 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException(String.format("Compilation with id=%d was not found", compId)));
 
-        return CompilationMapper.toDto(compilation, getEventsViewsByCompilation(compilation));
+        return CompilationMapper.toCompilationDto(compilation, getEventsViewsByCompilation(compilation));
     }
 
     @Override
     @Transactional
     public CompilationDto updateCompilation(Long compId, NewCompilationDto updateCompilationRequest) {
         Compilation compilation = compilationRepository.findById(compId)
-                .orElseThrow(() -> new EntityNotExistsException(String.format("Compilation with id=%d was not found", compId)));
+                .orElseThrow(() -> new NotFoundException(String.format("Compilation with id=%d was not found", compId)));
 
         List<Event> events = null;
         if (updateCompilationRequest.getEvents() != null && !updateCompilationRequest.getEvents().isEmpty())
@@ -116,21 +93,19 @@ public class CompilationServiceImpl implements CompilationService {
         if (updateCompilationRequest.getTitle() != null)
             compilation.setTitle(updateCompilationRequest.getTitle());
 
-        try {
-            Compilation newCompilation = compilationRepository.saveAndFlush(compilation);
-            return CompilationMapper.toDto(newCompilation, getEventsViewsByCompilation(newCompilation));
-        } catch (DataIntegrityViolationException exception) {
-            throw new FieldValueExistsException(exception.getMessage());
-        }
+
+            Compilation newCompilation = compilationRepository.save(compilation);
+            return CompilationMapper.toCompilationDto(newCompilation, getEventsViewsByCompilation(newCompilation));
     }
 
     public Map<Long, Long> getEventsViewsByCompilation(Compilation compilation) {
-        return eventService.getEventsViews(compilation.getEvents());
+        return eventsService.getEventsViews(compilation.getEvents());
     }
 
     public Map<Long, Map<Long, Long>> mapEventsViewsByCompilations(List<Compilation> compilations) {
         return compilations.stream()
                 .collect(Collectors.toMap(Compilation::getId, this::getEventsViewsByCompilation));
-    }*/
+    }
+}
 
 

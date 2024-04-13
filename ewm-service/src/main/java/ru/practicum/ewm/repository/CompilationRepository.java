@@ -8,7 +8,7 @@ import ru.practicum.ewm.model.Compilation;
 import java.util.List;
 
 public interface CompilationRepository extends JpaRepository<Compilation, Long> {
-    /*@Query("Select c from compilation c " +
+    @Query("Select c from compilation c " +
             "Where c.pinned = :pinned")
-    List<Compilation> findAllWherePinned(List<Boolean> pinnedFilter, Pageable pageable);*/
+    List<Compilation> findAllWherePinned(List<Boolean> pinnedFilter, Pageable pageable);
 }

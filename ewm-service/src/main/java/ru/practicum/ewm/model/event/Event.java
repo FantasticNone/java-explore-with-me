@@ -57,5 +57,5 @@ public class Event {
     private Long participantLimit;
     @Enumerated(value = EnumType.STRING)
     private EventState state;
-    //private Integer views;
+    private Integer views;
 }

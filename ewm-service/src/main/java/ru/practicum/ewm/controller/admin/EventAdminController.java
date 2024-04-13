@@ -6,6 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.event.EventDto;
+import ru.practicum.ewm.dto.event.UpdateEventAdminRequest;
 import ru.practicum.ewm.service.event.EventService;
 
 import javax.validation.Valid;
@@ -30,16 +31,15 @@ public class EventAdminController {
         log.info("Get events by admin (users = {}, states = {}, categories = {}, rangeStart = {}, rangeEnd = {}, from = {}, size = {}",
                 users, states, categories, rangeStart, rangeEnd, from, size);
 
-        // return eventService.getEventsByAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
+        return eventService.getEventsByAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
+    }
 
-
-    /*@PatchMapping("/{eventId}")
-    public EventDto patchEvent(@PathVariable long eventId,
+    @PatchMapping("/{eventId}")
+    public EventDto updateEventByAdmin(@PathVariable long eventId,
                                @Validated @Valid @RequestBody UpdateEventAdminRequest updateDto) {
-        log.info("Update event (event id = {}, state action = {})", eventId, updateDto.getStateAction());
+        log.info("Admin: updating event with id: {}", eventId);
 
         return eventService.updateEventAdmin(eventId, updateDto);
-    }*/
-        return null;
     }
+
 }
