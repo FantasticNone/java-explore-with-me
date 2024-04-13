@@ -1,6 +1,7 @@
 package ru.practicum.ewm.model;
 
 import lombok.*;
+
 import javax.persistence.*;
 
 @AllArgsConstructor
