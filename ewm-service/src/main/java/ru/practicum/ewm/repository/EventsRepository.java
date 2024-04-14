@@ -1,6 +1,7 @@
 package ru.practicum.ewm.repository;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import ru.practicum.ewm.model.Category;
@@ -9,6 +10,7 @@ import ru.practicum.ewm.model.event.EventState;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface EventsRepository extends JpaRepository<Event, Long> {
     @Query("Select e from Event e " +
@@ -70,20 +72,6 @@ public interface EventsRepository extends JpaRepository<Event, Long> {
             "WHERE e.state IN ?1")
     List<Event> findByStates(List<EventState> states, Pageable pageable);
 
-    @Query("SELECT e FROM Event AS e " +
-            "WHERE e.state = 'PUBLISHED' " +
-            "AND e.participantLimit > (SELECT COUNT(r) FROM e.requests r WHERE r.status = 'CONFIRMED') " +
-            "AND (lower(e.annotation) like concat('%', lower(?1), '%') OR lower(e.description) like concat('%', lower(?1), '%')) " +
-            "AND e.category IN :categories " +
-            "AND e.paid IN :paid " +
-            "AND e.eventDate BETWEEN :rangeStartFilter AND :rangeEndFilter")
-    List<Event> findPublicAvailable(String text, List<Category> categories, List<Boolean> paid, LocalDateTime rangeStartFilter, LocalDateTime rangeEndFilter, Pageable pageable);
+    List<Event> findAll(Specification<Event> specification, Pageable pageable);
 
-    @Query("SELECT e FROM Event AS e " +
-            "WHERE e.state = 'PUBLISHED' " +
-            "AND (lower(e.annotation) like concat('%', lower(?1), '%') OR lower(e.description) like concat('%', lower(?1), '%')) " +
-            "AND e.category IN :categories " +
-            "AND e.paid IN :paid " +
-            "AND e.eventDate BETWEEN :rangeStartFilter AND :rangeEndFilter")
-    List<Event> findPublic(String text, List<Category> categories, List<Boolean> paid, LocalDateTime rangeStartFilter, LocalDateTime rangeEndFilter, Pageable pageable);
 }

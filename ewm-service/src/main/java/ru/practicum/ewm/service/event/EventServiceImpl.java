@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
 import ru.practicum.ewm.dto.event.*;
 import ru.practicum.ewm.dto.request.RequestDto;
@@ -25,13 +27,12 @@ import ru.practicum.ewm.repository.EventLocationRepository;
 import ru.practicum.ewm.repository.EventsRepository;
 import ru.practicum.ewm.repository.UserRepository;
 import ru.practicum.http.client.hit.StatsClient;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import javax.persistence.criteria.Predicate;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.HOURS;
@@ -46,6 +47,8 @@ public class EventServiceImpl implements EventService {
     private final EventLocationRepository eventLocationRepository;
 
     private final StatsClient statsClient;
+    @Value("${app}")
+    String app;
 
     @Override
     @Transactional
@@ -300,62 +303,78 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventShortDto> getEventsByPublic(String text, List<Long> categories, Boolean paid,
-                                                 LocalDateTime rangeStart, LocalDateTime rangeEnd,
-                                                 boolean onlyAvailable, String sort, int from, int size) {
-        String textFilter;
-        List<Category> categoriesFilter;
-        List<Boolean> paidFilter;
-        LocalDateTime rangeStartFilter;
-        LocalDateTime rangeEndFilter;
-        Pageable pageable;
+    public List<EventShortDto> getEventsByPublic(PublicSearchEventsParams params) {
+        LocalDateTime start = params.getRangeStart();
+        LocalDateTime end = params.getRangeEnd();
 
-        textFilter = text.toLowerCase();
+        if (start == null) params.setRangeStart(LocalDateTime.now());
 
-        if (categories != null)
-            categoriesFilter = categoryRepository.findAllById(categories);
-        else
-            categoriesFilter = categoryRepository.findAll();
+        if (end != null && Objects.requireNonNull(start).isAfter(end))
+            throw new DataValidationFailException("Start time can't be after End time");
 
-        if (paid != null)
-            paidFilter = List.of(paid);
-        else
-            paidFilter = List.of(Boolean.TRUE, Boolean.FALSE);
+        Specification<Event> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> row = new ArrayList<>();
 
-        if (rangeStart != null && rangeEnd != null) {
-            if (rangeStart.isAfter(rangeEnd))
-                throw new BadRequestException("Range end is before Range start");
+            if (params.getCategories() != null) {
+                row.add(root.get("category").get("id").in(params.getCategories()));
+            }
 
-            rangeStartFilter = rangeStart;
-            rangeEndFilter = rangeEnd;
-        } else {
-            rangeStartFilter = LocalDateTime.now();
-            rangeEndFilter = rangeStartFilter.plusYears(1000);
-        }
+            if (params.getPaid() != null) {
+                row.add(criteriaBuilder.equal(root.get("paid"), params.getPaid()));
+            }
 
-        if (sort == null || (!sort.equals("EVENT_DATE") && !sort.equals("VIEWS")))
-            pageable = PageRequest.of(from / size, size, Sort.by("createdOn").descending());
-        else {
-            if (sort.equals("EVENT_DATE")) {
-                pageable = PageRequest.of(from / size, size, Sort.by("eventDate").ascending());
-            } else {
-                pageable = PageRequest.of(from / size, size, Sort.by("views").ascending());
+            if (params.getOnlyAvailable() != null && params.getOnlyAvailable()) {
+                row.add(criteriaBuilder.and(
+                        criteriaBuilder.greaterThanOrEqualTo(root.get("participantLimit"), 0),
+                        criteriaBuilder.lessThan(root.get("participantLimit"), root.get("confirmedRequest"))
+                ));
+            }
+            LocalDateTime current = LocalDateTime.now();
+            LocalDateTime startDateTime = Objects.requireNonNullElse(params.getRangeStart(), current);
+            row.add(criteriaBuilder.greaterThan(root.get("eventDate"), startDateTime));
+            if (params.getRangeEnd() != null) {
+                row.add(criteriaBuilder.lessThan(root.get("eventDate"), params.getRangeEnd()));
+            }
+            if (params.getText() != null && !params.getText().isBlank()) {
+                String likeText = "%" + params.getText() + "%";
+                row.add(criteriaBuilder.or(
+                        criteriaBuilder.like(root.get("annotation"), likeText),
+                        criteriaBuilder.like(root.get("description"), likeText)
+                ));
+            }
+            return criteriaBuilder.and(row.toArray(new Predicate[0]));
+        };
+
+        int from = params.getFrom(), size = params.getSize();
+        Pageable pageable = PageRequest.of(from / size, size);
+        if (params.getSort() != null) {
+            switch (params.getSort()) {
+                case "EVENT_DATE":
+                    pageable = PageRequest.of(from / size, size, Sort.Direction.ASC, "eventDate");
+                    break;
+                case "VIEWS":
+                    pageable = PageRequest.of(from / size, size, Sort.Direction.DESC, "views");
+                    break;
             }
         }
-
-        List<Event> events;
-
-        if (onlyAvailable)
-            events = eventsRepository.findPublicAvailable(textFilter, categoriesFilter, paidFilter, rangeStartFilter, rangeEndFilter, pageable);
-        else
-            events = eventsRepository.findPublic(textFilter, categoriesFilter, paidFilter, rangeStartFilter, rangeEndFilter, pageable);
+        List<Event> events = eventsRepository.findAll(spec, pageable);
+        if (events.isEmpty()) return List.of();
 
         return EventMapper.toListShortDto(events, getEventsViews(events));
     }
 
     @Override
     public EventDto getEventByPublic(Long eventId) {
-        return null;
+        Event event = eventsRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+
+        if (!event.getState().equals(EventState.PUBLISHED))
+            throw new NotFoundException("Event must be published");
+
+            eventsRepository.save(event);
+
+        return EventMapper.toDtoWithViews(event, getEventViews(event));
+
     }
 
     public Long getEventViews(Event event) {
