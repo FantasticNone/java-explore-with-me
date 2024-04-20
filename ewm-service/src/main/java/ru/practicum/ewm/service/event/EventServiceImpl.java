@@ -8,32 +8,34 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.StatsDto;
 import ru.practicum.ewm.dto.event.*;
+import ru.practicum.ewm.dto.event.search.AdminSearchEventsParams;
+import ru.practicum.ewm.dto.event.search.PublicSearchEventsParams;
+import ru.practicum.ewm.dto.event.state.StateActionAdmin;
+import ru.practicum.ewm.dto.event.state.StateActionUser;
 import ru.practicum.ewm.dto.request.RequestDto;
 import ru.practicum.ewm.exceptions.ConditionsViolationException;
-import ru.practicum.ewm.mapper.EventMapper;
-import ru.practicum.ewm.mapper.RequestMapper;
+import ru.practicum.ewm.exceptions.ConflictDataException;
+import ru.practicum.ewm.mapper.*;
 import ru.practicum.ewm.exceptions.DataValidationFailException;
 import ru.practicum.ewm.exceptions.NotFoundException;
-import ru.practicum.ewm.model.Category;
-import ru.practicum.ewm.model.EventLocation;
-import ru.practicum.ewm.model.Request;
-import ru.practicum.ewm.model.User;
+import ru.practicum.ewm.model.category.Category;
+import ru.practicum.ewm.model.event.Location;
+import ru.practicum.ewm.model.request.Request;
+import ru.practicum.ewm.model.user.User;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.model.event.EventState;
-import ru.practicum.ewm.repository.CategoriesRepository;
-import ru.practicum.ewm.repository.EventLocationRepository;
-import ru.practicum.ewm.repository.EventsRepository;
-import ru.practicum.ewm.repository.UserRepository;
+import ru.practicum.ewm.repository.*;
 import ru.practicum.http.client.hit.StatsClient;
-import org.springframework.beans.factory.annotation.Value;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import javax.persistence.criteria.Predicate;
 import java.util.stream.Collectors;
+import java.util.function.BiConsumer;
 
-import static java.time.temporal.ChronoUnit.HOURS;
+import static ru.practicum.ewm.dto.event.state.StateActionAdmin.*;
+import static ru.practicum.ewm.model.event.EventState.*;
 
 @Service
 @RequiredArgsConstructor
@@ -42,103 +44,80 @@ public class EventServiceImpl implements EventService {
     private final EventsRepository eventsRepository;
     private final UserRepository userRepository;
     private final CategoriesRepository categoryRepository;
-    private final EventLocationRepository eventLocationRepository;
+    private final LocationRepository locationRepository;
 
     private final StatsClient statsClient;
-    @Value("${app}")
-    String app;
 
     @Override
     @Transactional
-    public EventDto createEvent(long userId, NewEventDto newEventDto) {
+    public EventFullDto createEvent(Long userId, NewEventDto newEventDto) {
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new DataValidationFailException("Should be date that has not yet occurred");
         }
-
-        User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId)));
+        User initiator = checkUserId(userId);
         Category category = categoryRepository.findById(newEventDto.getCategory())
                 .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", newEventDto.getCategory())));
-        Event event = EventMapper.toEventFromNewEvent(newEventDto, initiator, category, LocalDateTime.now());
-        eventsRepository.save(event);
-        return EventMapper.toEventDtoFromEvent(event);
+        Location location = locationRepository.save(LocationMapper.toLocation(newEventDto.getLocation()));
+
+        Event event = EventMapper.toEvent(newEventDto);
+        event.setCategory(category);
+        event.setInitiator(initiator);
+        event.setLocation(location);
+        event.setState(PENDING);
+        event.setCreatedOn(LocalDateTime.now());
+        return EventMapper.toEventFullDto(eventsRepository.save(event));
     }
 
     @Override
-    public List<EventShortDto> getUserEvents(long userId, int from, int size) {
-        User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId)));
-        List<Event> userEvents = eventsRepository.getUserEvents(userId, PageRequest.of(from / size, size));
-        long eventCount = eventsRepository.countByInitiatorId(userId);
-        //return EventMapper.toCountListShortDto(userEvents, eventCount);
-        return EventMapper.toListShortDto(userEvents, getEventsViews(userEvents));
+    public List<EventShortDto> getUserEvents(Long userId, int from, int size) {
+        checkUserId(userId);
+        List<Event> userEvents = eventsRepository.findAllByInitiatorId(userId, PageRequest.of(from / size, size));
+        return userEvents.stream()
+                .map(EventMapper::toEventShortDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public EventDto getEvent(long userId, long eventId) {
-        User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId)));
-
-        Event event = eventsRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
-
-        return EventMapper.toDtoWithViews(event, getEventViews(event));
+    public EventFullDto getEvent(long userId, long eventId) {
+        checkUserId(userId);
+        Event event = checkEventId(eventId);
+        return EventMapper.toEventFullDto(event);
     }
 
     @Override
     @Transactional
-    public EventDto updateEvent(long userId, long eventId, UpdateEventUserRequest newEventDto) {
+    public EventFullDto updateEvent(Long userId, Long eventId, UpdateEventRequest newEventDto) {
         if (newEventDto.getEventDate() != null) {
             if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
                 throw new DataValidationFailException("Should be date that has not yet occurred");
             }
         }
 
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId)));
-        Event event = eventsRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+        User user = checkUserId(userId);
+        Event event = checkEventId(eventId);
 
         if (!event.getInitiator().getId().equals(user.getId()))
             throw new ConditionsViolationException("Only event initiator can update this event");
-        if (!event.getState().equals(EventState.PENDING) && !event.getState().equals(EventState.CANCELED))
+        if (!event.getState().equals(PENDING) && !event.getState().equals(EventState.CANCELED))
             throw new ConditionsViolationException("Only pending or canceled events can be changed");
 
-        if (newEventDto.getAnnotation() != null)
-            event.setAnnotation(newEventDto.getAnnotation());
-
         if (newEventDto.getCategory() != null) {
-            Category category = categoryRepository.findById(newEventDto.getCategory().getId())
-                    .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", newEventDto.getCategory().getId())));
+            Category category = categoryRepository.findById(newEventDto.getCategory())
+                    .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", newEventDto.getCategory())));
             event.setCategory(category);
         }
 
-        if (newEventDto.getDescription() != null)
-            event.setDescription(newEventDto.getDescription());
-        if (newEventDto.getEventDate() != null)
-            event.setEventDate(newEventDto.getEventDate());
-
         if (newEventDto.getLocation() != null) {
-            if (!eventLocationRepository.existsByLatAndLon(newEventDto.getLocation().getLat(), newEventDto.getLocation().getLon())) {
-                EventLocation eventLocation = EventLocation.builder()
+            if (!locationRepository.existsByLatAndLon(newEventDto.getLocation().getLat(), newEventDto.getLocation().getLon())) {
+                Location eventLocation = Location.builder()
                         .lat(newEventDto.getLocation().getLat())
                         .lon(newEventDto.getLocation().getLon())
-                        .event(event)
                         .build();
-                EventLocation newEventLocation = eventLocationRepository.save(eventLocation);
+                Location newEventLocation = locationRepository.save(eventLocation);
 
-                event.setEventLocation(newEventLocation);
+                event.setLocation(newEventLocation);
             }
         }
-
-        if (newEventDto.getPaid() != null)
-            event.setPaid(newEventDto.getPaid());
-        if (newEventDto.getParticipantLimit() != null)
-            event.setParticipantLimit(newEventDto.getParticipantLimit());
-        if (newEventDto.getRequestModeration() != null)
-            event.setRequestModeration(newEventDto.getRequestModeration());
-
 
         String stateString = newEventDto.getStateAction();
         if (stateString != null && !stateString.isBlank()) {
@@ -147,24 +126,21 @@ public class EventServiceImpl implements EventService {
                     event.setState(EventState.CANCELED);
                     break;
                 case SEND_TO_REVIEW:
-                    event.setState(EventState.PENDING);
+                    event.setState(PENDING);
                     break;
             }
         }
 
-        if (newEventDto.getTitle() != null)
-            event.setTitle(newEventDto.getTitle());
+        updateEventFields(event, newEventDto);
 
         Event newEvent = eventsRepository.save(event);
-        return EventMapper.toDtoWithViews(newEvent, getEventViews(newEvent));
+        return EventMapper.toEventFullDto(newEvent);
     }
 
     @Override
-    public List<RequestDto> getEventRequests(long userId, long eventId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId)));
-        Event event = eventsRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+    public List<RequestDto> getEventRequests(Long userId, Long eventId) {
+        checkUserId(userId);
+        Event event = checkEventId(eventId);
 
         List<Request> eventRequests = event.getRequests();
 
@@ -172,132 +148,84 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventDto> getEventsByAdmin(List<Long> users, List<String> states, List<Long> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
-        List<Event> events;
-        List<EventState> searchingStates;
+    public List<EventFullDto> getEventsByAdmin(AdminSearchEventsParams params) {
+        LocalDateTime start = params.getRangeStart();
+        LocalDateTime end = params.getRangeEnd();
 
-        Pageable pageable = PageRequest.of(from / size, size);
+        if (start == null) params.setRangeStart(LocalDateTime.now());
 
-        if (states != null) {
-            searchingStates = Arrays.stream(EventState.values())
-                    .filter(e -> states.contains(e.toString()))
-                    .collect(Collectors.toList());
-        } else {
-            searchingStates = Arrays.stream(EventState.values())
-                    .collect(Collectors.toList());
+        if (end != null && Objects.requireNonNull(start).isAfter(end))
+            throw new ConflictDataException("Start time can't be after End time");
+
+        Pageable pageable = PageRequest.of(params.getFrom() / params.getSize(), params.getSize());
+        Specification<Event> spec = Specification.where(null);
+
+        spec = spec.and((root, query, criteriaBuilder) ->
+                criteriaBuilder.greaterThanOrEqualTo(root.get("eventDate"), params.getRangeStart()));
+
+        if (end != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.lessThanOrEqualTo(root.get("eventDate"), end));
+        }
+        if (params.getUsers() != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    root.get("initiator").get("id").in(params.getUsers()));
         }
 
-        if (users != null && categories != null) {
-            if (rangeStart != null && rangeEnd != null) {
-                events = eventsRepository.findByUsersAndCategoriesWithTimestamp(users, categories, searchingStates, rangeStart, rangeEnd, pageable);
-            } else {
-                events = eventsRepository.findByUsersAndCategories(users, categories, searchingStates, pageable);
-            }
-        } else if (users != null) {
-            if (rangeStart != null && rangeEnd != null) {
-                events = eventsRepository.findByUsersWithTimestamp(users, searchingStates, rangeStart, rangeEnd, pageable);
-            } else {
-                events = eventsRepository.findByUsers(users, searchingStates, pageable);
-            }
-        } else if (categories != null) {
-            if (rangeStart != null && rangeEnd != null) {
-                events = eventsRepository.findByCategoriesWithTimestamp(categories, searchingStates, rangeStart, rangeEnd, pageable);
-            } else {
-                events = eventsRepository.findByCategories(categories, searchingStates, pageable);
-            }
-        } else {
-            if (rangeStart != null && rangeEnd != null) {
-                events = eventsRepository.findWithTimestamp(searchingStates, rangeStart, rangeEnd, pageable);
-            } else {
-                events = eventsRepository.findByStates(searchingStates, pageable);
-            }
+        if (params.getCategories() != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    root.get("category").in(params.getCategories()));
         }
 
-        return EventMapper.toListDto(events, getEventsViews(events));
+        return eventsRepository.findAll(spec, pageable).stream()
+                .map(EventMapper::toEventFullDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public EventDto updateEventAdmin(long eventId, UpdateEventAdminRequest updateDto) {
-        Event event = eventsRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+    public EventFullDto updateEventAdmin(Long eventId, UpdateEventRequest updateDto) {
+        Event event = checkEventId(eventId);
 
-        String stateString = updateDto.getStateAction();
-        if (stateString != null && !stateString.isBlank()) {
-            switch (StateActionAdmin.valueOf(stateString)) {
-                case PUBLISH_EVENT:
-                    if (HOURS.between(LocalDateTime.now(), event.getEventDate()) < 1) {
-                        throw new DataValidationFailException("Начало события должно быть минимум на один час позже момента публикации");
-                    }
-                    if (event.getState() == EventState.PUBLISHED) {
-                        throw new ConditionsViolationException("Попытка опубликовать событие с id=" + event.getId() + ", которое уже опубликовано.");
-                    }
-                    if (event.getState() == EventState.CANCELED) {
-                        throw new ConditionsViolationException("Попытка опубликовать событие с id=" + event.getId() + ", которое уже отменено.");
-                    }
-                    event.setState(EventState.PUBLISHED);
-                    break;
-                case REJECT_EVENT:
-                    if (event.getState() == EventState.PUBLISHED) {
-                        throw new ConditionsViolationException("Попытка отменить событие с id=" + event.getId() + ", которое уже опубликовано.");
-                    }
-                    event.setState(EventState.CANCELED);
-                    break;
-            }
-        }
-
-        if (updateDto.getAnnotation() != null)
-            event.setAnnotation(updateDto.getAnnotation());
         if (updateDto.getCategory() != null) {
-            Category category = categoryRepository.findById(updateDto.getCategory())
-                    .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", updateDto.getCategory())));
-
+            long catId = updateDto.getCategory();
+            Category category = categoryRepository.findById(catId)
+                    .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", catId)
+                    ));
             event.setCategory(category);
         }
-        if (updateDto.getDescription() != null)
-            event.setDescription(updateDto.getDescription());
-
         if (updateDto.getEventDate() != null) {
-            if (updateDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-                throw new DataValidationFailException("Should be date that has not yet occurred");
-            }
-
+            LocalDateTime actualEventTime = event.getEventDate();
+            if (actualEventTime.plusHours(1).isAfter(updateDto.getEventDate()) ||
+                    actualEventTime.plusHours(1) != updateDto.getEventDate())
                 event.setEventDate(updateDto.getEventDate());
-            }
-            if (updateDto.getLocation() != null) {
-                EventLocation eventLocation = eventLocationRepository.findByLatAndLon(updateDto.getLocation().getLat(), updateDto.getLocation().getLon());
-                if (eventLocation == null) {
-                    EventLocation newEventLocation = EventLocation.builder()
-                            .lat(updateDto.getLocation().getLat())
-                            .lon(updateDto.getLocation().getLon())
-                            .build();
 
-                    newEventLocation = eventLocationRepository.save(newEventLocation);
+            else
+                throw new ConflictDataException("eventDate can't be earlier than one hour from the date of publication.");
+        }
 
-                    event.setEventLocation(newEventLocation);
-                } else {
-                    event.setEventLocation(eventLocation);
-                }
-            }
-            if (updateDto.getPaid() != null)
-                event.setPaid(updateDto.getPaid());
-            if (updateDto.getParticipantLimit() != null)
-                event.setParticipantLimit(updateDto.getParticipantLimit());
-            if (updateDto.getRequestModeration() != null)
-                event.setRequestModeration(updateDto.getRequestModeration());
-            if (updateDto.getStateAction() != null) {
-                if (updateDto.getStateAction().equals(StateActionAdmin.PUBLISH_EVENT)) {
-                    event.setState(EventState.PUBLISHED);
+        if (updateDto.getLocation() != null) {
+            event.setLocation(locationRepository.save(LocationMapper.toLocation(updateDto.getLocation())));
+        }
+
+        if (updateDto.getStateAction() != null) {
+            if (event.getState() == PENDING) {
+                StateActionAdmin action = StateActionAdmin.toEnum(updateDto.getStateAction());
+                if (action == PUBLISH_EVENT) {
+                    event.setState(PUBLISHED);
                     event.setPublishedOn(LocalDateTime.now());
-                } else {
-                    event.setState(EventState.CANCELED);
+                } else if (action == REJECT_EVENT) {
+                    event.setState(CANCELED);
                 }
+            } else {
+                throw new ConflictDataException(String.format(
+                        "Cannot publish the event because it's not in the right state: %S",
+                        event.getState())
+                );
             }
-            if (updateDto.getTitle() != null)
-                event.setTitle(updateDto.getTitle());
-
-        Event newEvent = eventsRepository.save(event);
-        return EventMapper.toDtoWithViews(newEvent, getEventViews(newEvent));
+        }
+        updateEventFields(event, updateDto);
+        return EventMapper.toEventFullDto(eventsRepository.save(event));
     }
 
     @Override
@@ -362,16 +290,19 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventDto getEventByPublic(Long eventId) {
-        Event event = eventsRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+    public EventFullDto getEventByPublic(Long eventId) {
+        Event event = checkEventId(eventId);
 
         if (!event.getState().equals(EventState.PUBLISHED))
             throw new NotFoundException("Event must be published");
 
-            eventsRepository.save(event);
+        eventsRepository.save(event);
 
-        return EventMapper.toDtoWithViews(event, getEventViews(event));
+        EventFullDto eventByPublic = EventMapper.toEventFullDto(event);
+
+        eventByPublic.setViews(getEventViews(event));
+
+        return eventByPublic;
 
     }
 
@@ -407,5 +338,55 @@ public class EventServiceImpl implements EventService {
         } else {
             return Collections.emptyMap();
         }
+    }
+
+    private User checkUserId(long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId)));
+        return user;
+    }
+
+    private Event checkEventId(long eventId) {
+        return eventsRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+    }
+
+    private void updateEventFields(Event savedEvent, UpdateEventRequest newEvent) {
+        Map<String, BiConsumer<Event, UpdateEventRequest>> fieldsUpdaters = new HashMap<>();
+        fieldsUpdaters.put("annotation",
+                (event, eventForUpdate) -> event.setAnnotation(eventForUpdate.getAnnotation()));
+        fieldsUpdaters.put("description",
+                (event, eventForUpdate) -> event.setDescription(eventForUpdate.getDescription()));
+        fieldsUpdaters.put("paid",
+                ((event, eventForUpdate) -> event.setPaid(eventForUpdate.getPaid())));
+        fieldsUpdaters.put("participantLimit",
+                ((event, eventForUpdate) -> event.setParticipantLimit(eventForUpdate.getParticipantLimit())));
+        fieldsUpdaters.put("requestModeration",
+                ((event, eventForUpdate) -> event.setRequestModeration(eventForUpdate.getRequestModeration())));
+        fieldsUpdaters.put("title",
+                ((event, eventForUpdate) -> event.setTitle(eventForUpdate.getTitle())));
+
+        fieldsUpdaters.forEach((field, updater) -> {
+            switch (field) {
+                case "annotation":
+                    if (newEvent.getAnnotation() != null) updater.accept(savedEvent, newEvent);
+                    break;
+                case "description":
+                    if (newEvent.getDescription() != null) updater.accept(savedEvent, newEvent);
+                    break;
+                case "paid":
+                    if (newEvent.getPaid() != null) updater.accept(savedEvent, newEvent);
+                    break;
+                case "participantLimit":
+                    if (newEvent.getParticipantLimit() != null) updater.accept(savedEvent, newEvent);
+                    break;
+                case "requestModeration":
+                    if (newEvent.getRequestModeration() != null) updater.accept(savedEvent, newEvent);
+                    break;
+                case "title":
+                    if (newEvent.getTitle() != null) updater.accept(savedEvent, newEvent);
+                    break;
+            }
+        });
     }
 }

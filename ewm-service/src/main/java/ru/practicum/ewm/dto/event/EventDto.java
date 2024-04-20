@@ -1,8 +1,8 @@
 package ru.practicum.ewm.dto.event;
 
 import lombok.*;
-import ru.practicum.ewm.dto.UserDto;
-import ru.practicum.ewm.model.Category;
+import ru.practicum.ewm.dto.user.UserDto;
+import ru.practicum.ewm.model.category.Category;
 import ru.practicum.ewm.model.event.EventState;
 import ru.practicum.ewm.model.event.Location;
 

@@ -5,9 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.ewm.dto.UserDto;
+import ru.practicum.ewm.dto.user.UserDto;
+import ru.practicum.ewm.dto.request.NewRequest;
 import ru.practicum.ewm.service.user.UserService;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
 
 @RestController
@@ -16,11 +20,12 @@ import java.util.List;
 @Validated
 @Slf4j
 public class UserAdminController {
+
     private final UserService userService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto createUser(@Validated @RequestBody UserDto userDto) {
+    public UserDto createUser(@Valid @RequestBody NewRequest userDto) {
         log.info("Admin: creating user: {}", userDto);
         return userService.newUser(userDto);
     }
@@ -34,8 +39,8 @@ public class UserAdminController {
 
     @GetMapping
     public List<UserDto> getUsers(@RequestParam(required = false) List<Long> ids,
-                                  @RequestParam(defaultValue = "0") int from,
-                                  @RequestParam(defaultValue = "10") int size) {
+                                  @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+                                  @RequestParam(defaultValue = "10") @Positive int size) {
         log.info("Admin: getting users (ids = {}, from = {}, size = {})", ids, from, size);
         return userService.getUsers(ids, from, size);
     }

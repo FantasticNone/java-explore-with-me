@@ -2,11 +2,16 @@ package ru.practicum.ewm.dto.location;
 
 import lombok.*;
 
+import javax.validation.constraints.NotNull;
+
 @Data
-@Builder
-@RequiredArgsConstructor
 @AllArgsConstructor
-public class EventLocationDto {
+@NoArgsConstructor
+public class LocationDto {
+
+    @NotNull
     private Float lat;
+
+    @NotNull
     private Float lon;
 }

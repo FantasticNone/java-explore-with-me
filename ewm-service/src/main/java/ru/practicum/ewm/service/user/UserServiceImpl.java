@@ -3,11 +3,12 @@ package ru.practicum.ewm.service.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import ru.practicum.ewm.dto.UserDto;
+import ru.practicum.ewm.dto.user.UserDto;
+import ru.practicum.ewm.dto.request.NewRequest;
 import ru.practicum.ewm.exceptions.ConflictDataException;
 import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.UserMapper;
-import ru.practicum.ewm.model.User;
+import ru.practicum.ewm.model.user.User;
 import ru.practicum.ewm.repository.UserRepository;
 
 import javax.transaction.Transactional;
@@ -20,11 +21,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDto newUser(UserDto userDto) {
+    public UserDto newUser(NewRequest userDto) {
         if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new ConflictDataException("Email must be unique.");
+            throw new ConflictDataException("User with this email exist already");
         }
-        User user = userRepository.save(UserMapper.fromUserDto(userDto));
+        User user = userRepository.save(UserMapper.fromUserRequest(userDto));
         return UserMapper.toUserDto(user);
     }
 
@@ -40,10 +41,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDto> getUsers(List<Long> ids, int from, int size) {
-        if (from < 0 || size < 0) {
-            throw new IllegalArgumentException("From and Size must be positive or zero");
-        }
-
         List<User> users;
 
         if (ids != null) {

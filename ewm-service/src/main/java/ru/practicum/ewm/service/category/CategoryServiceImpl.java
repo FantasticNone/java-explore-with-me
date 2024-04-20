@@ -8,7 +8,7 @@ import ru.practicum.ewm.dto.category.NewCategoryDto;
 import ru.practicum.ewm.exceptions.ConflictDataException;
 import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.CategoryMapper;
-import ru.practicum.ewm.model.Category;
+import ru.practicum.ewm.model.category.Category;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.repository.CategoriesRepository;
 import ru.practicum.ewm.repository.EventsRepository;
@@ -38,7 +38,14 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto updateCategory(long categoryId, NewCategoryDto newCategoryDto) {
         Category category = categoriesRepository.findById(categoryId)
-                .orElseThrow(() -> new NotFoundException("Category with id=%d was not found"));
+                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", categoryId)));
+
+        if (category.getName().equals(newCategoryDto.getName())) {
+            return CategoryMapper.toCatDto(category);
+        }
+        if (categoriesRepository.findCategoryByName(newCategoryDto.getName()) != null) {
+            throw new ConflictDataException("Name must be unique.");
+        }
 
         category.setName(newCategoryDto.getName());
 
@@ -50,20 +57,19 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(long categoryId) {
         categoriesRepository.findById(categoryId)
-                .orElseThrow(() -> new NotFoundException("Category with id=%d was not found"));
+                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", categoryId)));
+
         List<Event> eventsWithCategory = eventsRepository.findEventByCategory(categoryId);
+
         if (eventsWithCategory.size() > 0) {
             throw new ConflictDataException("The category has events");
         }
+
         categoriesRepository.deleteById(categoryId);
     }
 
     @Override
     public List<CategoryDto> getCategories(int from, int size) {
-        if (from < 0 || size < 0) {
-            throw new IllegalArgumentException("From and Size must be positive or zero");
-        }
-
         List<Category> categories = categoriesRepository.findAll(PageRequest.of(from / size, size)).getContent();
 
         return CategoryMapper.toCatDtoList(categories);

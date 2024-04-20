@@ -28,17 +28,11 @@ public class ErrorHandler {
 
     @ExceptionHandler({MethodArgumentNotValidException.class,
             BadRequestException.class,
+            IncorrectStatusException.class,
             DataValidationFailException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidateException(final Exception e) {
         log.debug("Получен статус 400 Bad Request {}", e.getMessage(), e);
-        return new ErrorResponse(e.getMessage());
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse handleNotAdminException(final NotAdminException e) {
-        log.debug("Получен статус 403 Forbidden {}", e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
 

@@ -1,4 +1,4 @@
-package ru.practicum.ewm.model;
+package ru.practicum.ewm.model.category;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -18,6 +18,7 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
     @Size(min = 1, max = 50)
     private String name;
 }

@@ -1,13 +1,13 @@
 package ru.practicum.ewm.model.event;
 
 import javax.persistence.*;
+import javax.validation.constraints.Size;
 
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
-import ru.practicum.ewm.model.Category;
-import ru.practicum.ewm.model.EventLocation;
-import ru.practicum.ewm.model.Request;
-import ru.practicum.ewm.model.User;
+import ru.practicum.ewm.model.category.Category;
+import ru.practicum.ewm.model.request.Request;
+import ru.practicum.ewm.model.user.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,27 +16,40 @@ import java.util.List;
 @Table(name = "events")
 @Getter
 @Setter
+@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Event {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(length = 2000)
+
+    @Size(min = 20, max = 2000)
+    @Column(nullable = false)
     private String annotation;
-    @Column(length = 120)
+
+    @Size(min = 3, max = 120)
+    @Column(name = "title")
     private String title;
-    private int confirmedRequests;
+
+    @Column(name = "confirmed_request")
+    private int confirmedRequests = 0;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdOn;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publishedOn;
     private LocalDateTime eventDate;
-    @Column(length = 7000)
+
+    @Size(min = 20, max = 7000)
+    @Column(name = "description")
     private String description;
+
     @ManyToOne
-    @JoinColumn(name = "initiator_id")
+    @JoinColumn(name = "initiator_id", nullable = false)
     private User initiator;
 
     @OneToMany(mappedBy = "event")
@@ -46,16 +59,16 @@ public class Event {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    private EventLocation eventLocation;
-
-    @Embedded
+    @ManyToOne
+    @JoinColumn(name = "location_id")
     private Location location;
 
-    private Boolean paid;
+    private Boolean paid= false;
     private Boolean requestModeration;
-    private Long participantLimit;
+    private Integer participantLimit;
+
     @Enumerated(value = EnumType.STRING)
     private EventState state;
-    private Integer views;
+
+    private long views = 0;
 }

@@ -1,4 +1,4 @@
-package ru.practicum.ewm.model;
+package ru.practicum.ewm.model.compilation;
 
 import lombok.*;
 import ru.practicum.ewm.model.event.Event;
@@ -10,25 +10,26 @@ import java.util.List;
 @Table(name = "compilations")
 @Getter
 @Setter
-@Builder
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class Compilation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToMany
-    @JoinTable(
-            name = "compilation_event",
-            joinColumns = @JoinColumn(name = "compilation_id"),
-            inverseJoinColumns = @JoinColumn(name = "event_id")
-    )
-    private List<Event> events;
+    @ElementCollection
+    @CollectionTable(name = "compilation_events", joinColumns = @JoinColumn(name = "compilation"))
+    @Column(name = "events_id")
+    private List<Long> events;
 
-    @Column(nullable = false)
     private Boolean pinned;
 
-    @Column(nullable = false)
     private String title;
+
+    public Compilation(Boolean pinned, String title) {
+        this.pinned = pinned;
+        this.title = title;
+    }
 }

@@ -3,14 +3,14 @@ package ru.practicum.ewm.mapper;
 import lombok.experimental.UtilityClass;
 import ru.practicum.ewm.dto.category.CategoryDto;
 import ru.practicum.ewm.dto.category.NewCategoryDto;
-import ru.practicum.ewm.model.Category;
+import ru.practicum.ewm.model.category.Category;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @UtilityClass
 public class CategoryMapper {
-    public static CategoryDto toCatDto(Category category) {
+    public CategoryDto toCatDto(Category category) {
         return CategoryDto.builder()
                 .id(category.getId())
                 .name(category.getName())
@@ -23,7 +23,7 @@ public class CategoryMapper {
                 .build();
     }
 
-    public static List<CategoryDto> toCatDtoList(List<Category> categories) {
+    public List<CategoryDto> toCatDtoList(List<Category> categories) {
         return categories.stream()
                 .map(CategoryMapper::toCatDto)
                 .collect(Collectors.toList());

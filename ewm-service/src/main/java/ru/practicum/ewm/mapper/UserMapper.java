@@ -1,8 +1,10 @@
 package ru.practicum.ewm.mapper;
 
 import lombok.experimental.UtilityClass;
-import ru.practicum.ewm.dto.UserDto;
-import ru.practicum.ewm.model.User;
+import ru.practicum.ewm.dto.user.UserDto;
+import ru.practicum.ewm.dto.user.UserShortDto;
+import ru.practicum.ewm.dto.request.NewRequest;
+import ru.practicum.ewm.model.user.User;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,15 +19,22 @@ public class UserMapper {
                 .build();
     }
 
-    public User fromUserDto(UserDto userDto) {
+    public UserShortDto toUserShortDto(User user) {
+        UserShortDto userShortDto = new UserShortDto();
+        userShortDto.setId(user.getId());
+        userShortDto.setName(user.getName());
+
+        return userShortDto;
+    }
+
+    public User fromUserRequest(NewRequest userDto) {
         return User.builder()
-                .id(userDto.getId())
                 .name(userDto.getName())
                 .email(userDto.getEmail())
                 .build();
     }
 
-    public static List<UserDto> toDto(List<User> users) {
+    public List<UserDto> toDto(List<User> users) {
         return users.stream()
                 .map(UserMapper::toUserDto)
                 .collect(Collectors.toList());

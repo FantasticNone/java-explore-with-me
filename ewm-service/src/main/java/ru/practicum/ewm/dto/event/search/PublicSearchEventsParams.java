@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.event;
+package ru.practicum.ewm.dto.event.search;
 
 import lombok.*;
 
@@ -8,6 +8,7 @@ import java.util.List;
 @Builder
 @Data
 public class PublicSearchEventsParams {
+
     private String text;
     private List<Long> categories;
     private Boolean paid;

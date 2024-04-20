@@ -2,14 +2,17 @@ package ru.practicum.ewm.controller.publics;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.compilation.CompilationDto;
 import ru.practicum.ewm.service.compilation.CompilationService;
 
+import javax.validation.constraints.Min;
 import java.util.List;
 
 @RestController
 @Slf4j
+@Validated
 @RequestMapping("/compilations")
 @RequiredArgsConstructor
 public class CompilationPublicController {
@@ -24,7 +27,7 @@ public class CompilationPublicController {
     }
 
     @GetMapping("/{compId}")
-    public CompilationDto getCompilation(@PathVariable Long compId) {
+    public CompilationDto getCompilation(@PathVariable @Min(1) Long compId) {
         log.info("Public: get compilation by id: {}", compId);
         return compilationService.getCompilation(compId);
     }

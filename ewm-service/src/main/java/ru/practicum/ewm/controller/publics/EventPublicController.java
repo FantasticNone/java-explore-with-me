@@ -2,11 +2,12 @@ package ru.practicum.ewm.controller.publics;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.ewm.dto.event.EventDto;
+import ru.practicum.ewm.dto.event.EventFullDto;
 import ru.practicum.ewm.dto.event.EventShortDto;
-import ru.practicum.ewm.dto.event.PublicSearchEventsParams;
+import ru.practicum.ewm.dto.event.search.PublicSearchEventsParams;
 import ru.practicum.ewm.service.event.EventService;
 import ru.practicum.http.client.hit.StatsClient;
 
@@ -23,6 +24,9 @@ public class EventPublicController {
     private final EventService eventService;
     private final StatsClient statsClient;
 
+    @Value("${app}")
+    String app;
+
     @GetMapping
     public List<EventShortDto> getEventsBySearch(
             @RequestParam(required = false) String text,
@@ -33,7 +37,7 @@ public class EventPublicController {
             @RequestParam(required = false) Boolean onlyAvailable,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") @Min(0) int from,
-            @RequestParam(defaultValue = "10") @Min(1)int size,
+            @RequestParam(defaultValue = "10") @Min(1) int size,
             HttpServletRequest httpServletRequest) {
         log.info("Public: search events (text = {}, categories = {}, paid = {}, rangeStart = {}, rangeEnd = {}, " +
                         "onlyAvailable = {}, sort = {}, from = {}, size = {})",
@@ -57,10 +61,10 @@ public class EventPublicController {
     }
 
     @GetMapping("/{id}")
-    public EventDto getEvent(@PathVariable(value = "id") Long eventId, HttpServletRequest httpServletRequest) {
+    public EventFullDto getEvent(@PathVariable(value = "id") Long eventId, HttpServletRequest httpServletRequest) {
         log.info("Get event by public (event id = {})", eventId);
 
-        statsClient.createHit("ewm-main-service", httpServletRequest);
+        statsClient.createHit(app, httpServletRequest);
 
         return eventService.getEventByPublic(eventId);
     }
