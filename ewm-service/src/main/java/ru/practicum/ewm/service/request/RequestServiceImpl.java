@@ -2,7 +2,6 @@ package ru.practicum.ewm.service.request;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.request.RequestDto;
 import ru.practicum.ewm.dto.request.RequestListDto;
 import ru.practicum.ewm.dto.request.RequestUpdateStatusDto;
