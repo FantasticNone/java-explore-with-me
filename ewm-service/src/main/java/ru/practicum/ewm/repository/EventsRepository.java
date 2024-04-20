@@ -11,18 +11,18 @@ import java.util.List;
 public interface EventsRepository extends JpaRepository<Event, Long> {
     List<Event> findAllByInitiatorId(long userId, Pageable pageable);
 
-    @Query( "SELECT e " +
+    @Query("SELECT e " +
             "FROM Event e " +
             "WHERE e.category.id = :id")
     List<Event> findEventByCategory(long id);
 
-    @Query( "SELECT e " +
+    @Query("SELECT e " +
             "FROM Event e " +
             "WHERE 1=1 " +
             "AND :ids IS NULL OR e.id IN :ids")
     List<Event> findAllByIdIn(List<Long> ids);
 
-    @Query( "SELECT e " +
+    @Query("SELECT e " +
             "FROM Event e " +
             "WHERE e.id IN :ids")
     List<Event> findEventsByIds(List<Long> ids);

@@ -1,7 +1,6 @@
 package ru.practicum.ewm.model.compilation;
 
 import lombok.*;
-import ru.practicum.ewm.model.event.Event;
 
 import javax.persistence.*;
 import java.util.List;

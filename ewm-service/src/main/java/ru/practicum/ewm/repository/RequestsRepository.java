@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface RequestsRepository extends JpaRepository<Request, Long> {
 
-    @Query( "SELECT r "+
+    @Query("SELECT r " +
             "FROM Request r " +
             "WHERE r.id IN :ids")
     List<Request> findRequestsByIds(List<Long> ids);

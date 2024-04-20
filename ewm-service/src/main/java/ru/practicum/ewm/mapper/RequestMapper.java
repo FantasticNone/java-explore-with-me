@@ -21,6 +21,7 @@ public class RequestMapper {
                 .event(event)
                 .build();
     }
+
     public RequestDto toRequestDto(Request request) {
         return RequestDto.builder()
                 .id(request.getId())

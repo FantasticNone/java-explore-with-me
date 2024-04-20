@@ -63,7 +63,7 @@ public class Event {
     @JoinColumn(name = "location_id")
     private Location location;
 
-    private Boolean paid= false;
+    private Boolean paid = false;
     private Boolean requestModeration;
     private Integer participantLimit;
 
