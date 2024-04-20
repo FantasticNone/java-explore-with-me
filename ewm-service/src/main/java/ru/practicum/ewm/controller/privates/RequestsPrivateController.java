@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.request.RequestDto;
 import ru.practicum.ewm.dto.request.RequestListDto;
 import ru.practicum.ewm.dto.request.RequestUpdateStatusDto;
+import ru.practicum.ewm.exceptions.BadRequestException;
 import ru.practicum.ewm.service.request.RequestService;
 import ru.practicum.ewm.service.event.EventService;
 
@@ -23,7 +24,10 @@ public class RequestsPrivateController {
     @PostMapping("/{userId}/requests")
     @ResponseStatus(value = HttpStatus.CREATED)
     public RequestDto postRequest(@PathVariable Long userId,
-                                  @RequestParam Long eventId) {
+                                  @RequestParam(required = false) Long eventId) {
+        if (eventId == null) {
+            throw new BadRequestException("Event is not exist");
+        }
         log.info("Private: making request by user with id: {} to event with id: {}", userId, eventId);
         return requestService.createParticipation(userId, eventId);
     }

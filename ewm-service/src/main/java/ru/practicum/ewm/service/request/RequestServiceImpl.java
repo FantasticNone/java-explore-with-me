@@ -30,7 +30,6 @@ public class RequestServiceImpl implements RequestService {
     private final UserRepository userRepository;
 
     @Override
-    @Transactional
     public RequestDto createParticipation(long userId, long eventId) {
         User user = checkUserId(userId);
         Event event = checkEventId(eventId);

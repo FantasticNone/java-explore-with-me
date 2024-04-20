@@ -19,7 +19,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler({ConditionsViolationException.class,
-            ConflictDataException.class})
+                       ConflictDataException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflictDataException(final Exception e) {
         log.debug("Получен статус 409 Conflict {}", e.getMessage(), e);

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import ru.practicum.ewm.model.request.Request;
 
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Data
@@ -12,10 +13,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class RequestDto {
 
+    private Long id;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime created;
+
+    @NotNull
     private Long event;
-    private Long id;
+
     private Long requester;
     private Request.Status status;
 }
