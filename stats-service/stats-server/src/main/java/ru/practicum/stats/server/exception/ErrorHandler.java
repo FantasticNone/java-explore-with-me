@@ -12,7 +12,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleIncorrectDataException(final IncorrectDataException e) {
+    public ErrorResponse handleIncorrectDataException(final BadRequestException e) {
         log.debug("Получен статус 400 Bad Request {}", e.getMessage());
         return new ErrorResponse(e.getMessage());
     }

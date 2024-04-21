@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
-import ru.practicum.stats.server.exception.IncorrectDataException;
+import ru.practicum.stats.server.exception.BadRequestException;
 import ru.practicum.stats.server.mapper.EndpointHitMapper;
 import ru.practicum.stats.server.model.EndpointHit;
 import ru.practicum.stats.server.repository.HitRepository;
@@ -33,8 +33,12 @@ public class HitServiceImpl implements HitService {
         List<EndpointHit> endpointHits;
         List<StatsDto> stats;
 
+        if (start == null || end == null) {
+            throw new BadRequestException("Start date and end date are required for the request");
+        }
+
         if (start.isAfter(end))
-            throw new IncorrectDataException("Range end is before Range start");
+            throw new BadRequestException("Range end is before Range start");
 
         if (uris == null || uris.isEmpty()) {
             endpointHits = hitRepository.findAllHitsBetweenDates(start, end);
