@@ -28,6 +28,7 @@ public class RequestsPrivateController {
         if (eventId == null){
             throw new BadRequestException("Event is not exist");
         }
+
         log.info("Private: making request by user with id: {} to event with id: {}", userId, eventId);
         return requestService.createParticipation(userId, eventId);
     }
