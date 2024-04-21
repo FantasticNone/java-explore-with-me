@@ -53,9 +53,9 @@ public class EventPublicController {
                 .sort(sort)
                 .from(from)
                 .size(size)
-                .ip(httpServletRequest.getRemoteAddr())
-                .uri(httpServletRequest.getRequestURI())
                 .build();
+
+        statsClient.createHit(app, httpServletRequest);
 
         return eventService.getEventsByPublic(params);
     }

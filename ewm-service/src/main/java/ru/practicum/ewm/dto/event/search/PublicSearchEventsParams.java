@@ -18,6 +18,6 @@ public class PublicSearchEventsParams {
     private String sort;
     private Integer from;
     private Integer size;
-    private String ip;
-    private String uri;
+    //private String ip;
+    //private String uri;
 }
