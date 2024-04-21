@@ -17,6 +17,7 @@ import ru.practicum.ewm.repository.EventsRepository;
 import ru.practicum.ewm.repository.RequestsRepository;
 import ru.practicum.ewm.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,16 +50,17 @@ public class RequestServiceImpl implements RequestService {
             throw new ConditionsViolationException("Participation limit is overflowed");
         }
 
-        Request.Status status;
+        Request request = Request.builder()
+                .event(event)
+                .requester(user)
+                .status(Request.Status.PENDING)
+                .created(LocalDateTime.now())
+                .build();
         if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
-            status = Request.Status.CONFIRMED;
+            request.setStatus(Request.Status.CONFIRMED);
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-        } else {
-            status = Request.Status.PENDING;
         }
-        Request request = RequestMapper.toRequest(event, user, status);
         requestRepository.save(request);
-        eventRepository.save(event);
         return RequestMapper.toRequestDto(request);
     }
 
