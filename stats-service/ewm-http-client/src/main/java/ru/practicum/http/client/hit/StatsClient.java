@@ -7,6 +7,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
+import ru.practicum.http.client.hit.exception.BadRequestException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -47,6 +48,10 @@ public class StatsClient {
                                           LocalDateTime end,
                                           List<String> uris,
                                           Boolean unique) {
+        if (start == null || end == null) {
+            throw new BadRequestException("Start date and end date are required for the request");
+        }
+
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl + "/stats");
         builder.queryParam("start", DTF.format(start));
         builder.queryParam("end", DTF.format(end));
