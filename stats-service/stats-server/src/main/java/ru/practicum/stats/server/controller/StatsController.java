@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
+import ru.practicum.stats.server.exception.BadRequestException;
 import ru.practicum.stats.server.service.HitService;
 
 import javax.validation.Valid;
@@ -36,6 +37,9 @@ public class StatsController {
                                        @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
                                        @RequestParam(required = false) List<String> uris,
                                        @RequestParam(defaultValue = "false") Boolean unique) {
+        if (start == null || end == null) {
+            throw new BadRequestException("Start date and end date are required for the request");
+        }
         log.info("Get statistic (from = {}, to = {}, uris = {}, unique = {})",
                 start,
                 end,

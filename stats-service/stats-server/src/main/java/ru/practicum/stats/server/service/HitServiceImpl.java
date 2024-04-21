@@ -33,10 +33,6 @@ public class HitServiceImpl implements HitService {
         List<EndpointHit> endpointHits;
         List<StatsDto> stats;
 
-        if (start == null || end == null) {
-            throw new BadRequestException("Start date and end date are required for the request");
-        }
-
         if (start.isAfter(end))
             throw new BadRequestException("Range end is before Range start");
 
