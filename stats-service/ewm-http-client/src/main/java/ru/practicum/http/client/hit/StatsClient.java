@@ -51,7 +51,6 @@ public class StatsClient {
         if (start == null || end == null) {
             throw new BadRequestException("Start date and end date are required for the request");
         }
-
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl + "/stats");
         builder.queryParam("start", DTF.format(start));
         builder.queryParam("end", DTF.format(end));
