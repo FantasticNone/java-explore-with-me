@@ -50,7 +50,6 @@ public class StatsClient {
                                         LocalDateTime end,
                                         List<String> uris,
                                         Boolean unique) {
-
         if (start == null || end == null) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Start and End parameters are required.");
         }

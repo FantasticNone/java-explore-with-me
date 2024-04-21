@@ -36,6 +36,9 @@ public class HitServiceImpl implements HitService {
         if (start.isAfter(end))
             throw new BadRequestException("Range end is before Range start");
 
+        if (start == null || end == null)
+            throw new BadRequestException("Start date and end date are required for the request");
+
         if (uris == null || uris.isEmpty()) {
             endpointHits = hitRepository.findAllHitsBetweenDates(start, end);
         } else {
