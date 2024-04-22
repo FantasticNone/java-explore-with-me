@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
-import ru.practicum.stats.server.exception.BadRequestException;
 import ru.practicum.stats.server.service.HitService;
 
 import javax.validation.Valid;
