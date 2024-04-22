@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.request.RequestDto;
 import ru.practicum.ewm.dto.request.RequestListDto;
 import ru.practicum.ewm.dto.request.RequestUpdateStatusDto;
-import ru.practicum.ewm.exceptions.BadRequestException;
 import ru.practicum.ewm.service.request.RequestService;
 import ru.practicum.ewm.service.event.EventService;
 
