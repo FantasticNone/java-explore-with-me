@@ -3,6 +3,7 @@ package ru.practicum.ewm.mapper;
 import lombok.experimental.UtilityClass;
 import ru.practicum.ewm.dto.request.RequestDto;
 import ru.practicum.ewm.model.request.Request;
+import ru.practicum.ewm.model.request.RequestStatus;
 import ru.practicum.ewm.model.user.User;
 import ru.practicum.ewm.model.event.Event;
 
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class RequestMapper {
 
-    public Request toRequest(Event event, User requester, Request.Status status) {
+    public Request toRequest(Event event, User requester, RequestStatus status) {
         return Request.builder()
                 .created(LocalDateTime.now())
                 .status(status)

@@ -7,6 +7,9 @@ import ru.practicum.ewm.dto.location.LocationDto;
 @UtilityClass
 public class LocationMapper {
     public Location toLocation(LocationDto locationDto) {
-        return new Location(locationDto.getLat(), locationDto.getLon());
+        return Location.builder()
+                .lat(locationDto.getLat())
+                .lon(locationDto.getLon())
+                .build();
     }
 }

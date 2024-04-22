@@ -18,6 +18,7 @@ import ru.practicum.ewm.repository.EventsRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,9 +60,22 @@ public class CompilationServiceImpl implements CompilationService {
         else
             compilations = compilationRepository.findAll(pageable).getContent();
 
+        Map<Long, List<Long>> compilationEventsMap = compilations.stream()
+                .collect(Collectors.toMap(
+                        Compilation::getId,
+                        Compilation::getEvents
+                ));
+
+        List<Long> allEventIds = compilationEventsMap.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        Map<Long, EventShortDto> eventMap = eventsRepository.findAllByIdIn(allEventIds).stream()
+                .collect(Collectors.toMap(Event::getId, EventMapper::toEventShortDto));
+
         for (Compilation compilation : compilations) {
-            List<EventShortDto> events = eventsRepository.findAllByIdIn(compilation.getEvents()).stream()
-                    .map(EventMapper::toEventShortDto)
+            List<EventShortDto> events = compilationEventsMap.get(compilation.getId()).stream()
+                    .map(eventMap::get)
                     .collect(Collectors.toList());
             compilationDtos.add(CompilationMapper.toCompilationDto(compilation, events));
         }

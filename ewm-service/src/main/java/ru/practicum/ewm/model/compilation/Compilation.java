@@ -10,6 +10,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Compilation {
@@ -26,9 +27,4 @@ public class Compilation {
     private Boolean pinned;
 
     private String title;
-
-    public Compilation(Boolean pinned, String title) {
-        this.pinned = pinned;
-        this.title = title;
-    }
 }

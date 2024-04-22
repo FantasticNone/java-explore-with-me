@@ -25,7 +25,7 @@ public class EventPublicController {
     private final StatsClient statsClient;
 
     @Value("${app}")
-    String app;
+    public String app;
 
     @GetMapping
     public List<EventShortDto> getEventsBySearch(

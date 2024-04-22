@@ -19,7 +19,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler({ConditionsViolationException.class,
-                       ConflictDataException.class})
+            ConflictDataException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflictDataException(final Exception e) {
         log.debug("Получен статус 409 Conflict {}", e.getMessage(), e);
@@ -29,6 +29,7 @@ public class ErrorHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class,
             BadRequestException.class,
             IncorrectStatusException.class,
+            IllegalArgumentException.class,
             DataValidationFailException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidateException(final Exception e) {

@@ -10,6 +10,7 @@ import ru.practicum.ewm.exceptions.ConflictDataException;
 import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.RequestMapper;
 import ru.practicum.ewm.model.request.Request;
+import ru.practicum.ewm.model.request.RequestStatus;
 import ru.practicum.ewm.model.user.User;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.model.event.EventState;
@@ -53,11 +54,11 @@ public class RequestServiceImpl implements RequestService {
         Request request = Request.builder()
                 .event(event)
                 .requester(user)
-                .status(Request.Status.PENDING)
+                .status(RequestStatus.PENDING)
                 .created(LocalDateTime.now())
                 .build();
         if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
-            request.setStatus(Request.Status.CONFIRMED);
+            request.setStatus(RequestStatus.CONFIRMED);
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
         }
         requestRepository.save(request);
@@ -80,7 +81,7 @@ public class RequestServiceImpl implements RequestService {
 
         requestRepository.delete(request);
 
-        request.setStatus(Request.Status.CANCELED);
+        request.setStatus(RequestStatus.CANCELED);
 
         return RequestMapper.toRequestDto(request);
     }
@@ -101,24 +102,25 @@ public class RequestServiceImpl implements RequestService {
         }
 
         List<Request> requests = requestRepository.findRequestsByIds(updateRequest.getRequestIds());
+        List<Request> requestsIds = requestRepository.saveAll(requests);
         List<RequestDto> confirmedRequest = new ArrayList<>();
         List<RequestDto> rejectedRequest = new ArrayList<>();
 
-        for (Request request : requests) {
-            if (updateRequest.getStatus().equals(Request.Status.CONFIRMED)) {
+        for (Request request : requestsIds) {
+            if (updateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
                 if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
-                    request.setStatus(Request.Status.CONFIRMED);
+                    request.setStatus(RequestStatus.CONFIRMED);
                     confirmedRequest.add(RequestMapper.toRequestDto(request));
                 } else if (event.getConfirmedRequests() < event.getParticipantLimit()) {
-                    request.setStatus(Request.Status.CONFIRMED);
+                    request.setStatus(RequestStatus.CONFIRMED);
                     event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                     confirmedRequest.add(RequestMapper.toRequestDto(request));
                 } else {
-                    request.setStatus(Request.Status.REJECTED);
+                    request.setStatus(RequestStatus.REJECTED);
                     rejectedRequest.add(RequestMapper.toRequestDto(request));
                 }
             } else {
-                request.setStatus(Request.Status.REJECTED);
+                request.setStatus(RequestStatus.REJECTED);
                 rejectedRequest.add(RequestMapper.toRequestDto(request));
             }
             requestRepository.save(request);

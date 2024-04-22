@@ -24,9 +24,4 @@ public class Location {
 
     @Column(nullable = false)
     private Float lon;
-
-    public Location(Float lat, Float lon) {
-        this.lat = lat;
-        this.lon = lon;
-    }
 }

@@ -11,10 +11,10 @@ import java.util.List;
 @UtilityClass
 public class CompilationMapper {
     public Compilation toCompilation(NewCompilationDto newCompilationDto) {
-        return new Compilation(
-                newCompilationDto.isPinned(),
-                newCompilationDto.getTitle()
-        );
+        return Compilation.builder()
+                .pinned(newCompilationDto.isPinned())
+                .title(newCompilationDto.getTitle())
+                .build();
     }
 
     public CompilationDto toCompilationDto(Compilation compilation, List<EventShortDto> eventsShortDto) {

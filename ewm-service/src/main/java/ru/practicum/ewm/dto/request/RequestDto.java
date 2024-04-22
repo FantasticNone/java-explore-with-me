@@ -2,7 +2,7 @@ package ru.practicum.ewm.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
-import ru.practicum.ewm.model.request.Request;
+import ru.practicum.ewm.model.request.RequestStatus;
 
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
@@ -21,5 +21,5 @@ public class RequestDto {
     private Long event;
 
     private Long requester;
-    private Request.Status status;
+    private RequestStatus status;
 }

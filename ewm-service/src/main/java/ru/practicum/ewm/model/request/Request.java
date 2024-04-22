@@ -30,12 +30,5 @@ public class Request {
     private User requester;
 
     @Enumerated(value = EnumType.STRING)
-    private Status status;
-
-    public enum Status {
-        PENDING,
-        CONFIRMED,
-        REJECTED,
-        CANCELED
-    }
+    private RequestStatus status;
 }

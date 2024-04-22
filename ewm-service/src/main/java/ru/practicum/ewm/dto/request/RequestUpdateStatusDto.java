@@ -1,7 +1,7 @@
 package ru.practicum.ewm.dto.request;
 
 import lombok.*;
-import ru.practicum.ewm.model.request.Request;
+import ru.practicum.ewm.model.request.RequestStatus;
 
 import java.util.List;
 
@@ -14,5 +14,5 @@ import java.util.List;
 public class RequestUpdateStatusDto {
 
     private List<Long> requestIds;
-    private Request.Status status;
+    private RequestStatus status;
 }
