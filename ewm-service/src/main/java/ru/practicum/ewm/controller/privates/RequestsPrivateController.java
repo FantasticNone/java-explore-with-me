@@ -24,10 +24,7 @@ public class RequestsPrivateController {
     @PostMapping("/{userId}/requests")
     @ResponseStatus(value = HttpStatus.CREATED)
     public RequestDto postRequest(@PathVariable Long userId,
-                                  @RequestParam(required = false) Long eventId) {
-        if (eventId == null) {
-            throw new BadRequestException("Event is not exist");
-        }
+                                  @RequestParam Long eventId) {
         log.info("Private: making request by user with id: {} to event with id: {}", userId, eventId);
         return requestService.createParticipation(userId, eventId);
     }
