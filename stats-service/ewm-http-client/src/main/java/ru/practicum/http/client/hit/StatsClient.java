@@ -2,7 +2,10 @@ package ru.practicum.http.client.hit;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.dto.HitDto;
@@ -40,13 +43,16 @@ public class StatsClient {
                 hitDto.getUri(),
                 hitDto.getIp(),
 
-        restTemplate.postForObject(statsServerUrl + "/hit", hitDto, Object.class));
+                restTemplate.postForObject(statsServerUrl + "/hit", hitDto, Object.class));
     }
 
     public List<StatsDto> getStatistics(LocalDateTime start,
-                                          LocalDateTime end,
-                                          List<String> uris,
-                                          Boolean unique) {
+                                        LocalDateTime end,
+                                        List<String> uris,
+                                        Boolean unique) {
+        if (start == null || end == null) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Start and End parameters are required.");
+        }
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl + "/stats");
         builder.queryParam("start", DTF.format(start));
         builder.queryParam("end", DTF.format(end));
@@ -56,11 +62,18 @@ public class StatsClient {
             builder.queryParam("unique", unique);
         URI uri = builder.build(false).toUri();
 
-        StatsDto[] stats = restTemplate.getForObject(uri, StatsDto[].class);
+        try {
+            StatsDto[] stats = restTemplate.getForObject(uri, StatsDto[].class);
 
-        if (stats != null) {
-            return new ArrayList<>(Arrays.asList(stats));
-        } else {
+            if (stats != null) {
+                return new ArrayList<>(Arrays.asList(stats));
+            } else {
+                return Collections.emptyList();
+            }
+        } catch (HttpClientErrorException.BadRequest ex) {
+            throw ex;
+        } catch (RestClientException ex) {
+            log.error("Error while fetching statistics: {}", ex.getMessage());
             return Collections.emptyList();
         }
     }

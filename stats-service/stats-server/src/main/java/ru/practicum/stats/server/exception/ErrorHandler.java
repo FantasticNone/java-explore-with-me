@@ -2,6 +2,8 @@ package ru.practicum.stats.server.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -10,9 +12,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class ErrorHandler {
 
-    @ExceptionHandler
+    @ExceptionHandler({MethodArgumentNotValidException.class,
+            BadRequestException.class,
+            IllegalArgumentException.class,
+            MissingServletRequestParameterException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleIncorrectDataException(final IncorrectDataException e) {
+    public ErrorResponse handleIncorrectDataException(final Exception e) {
         log.debug("Получен статус 400 Bad Request {}", e.getMessage());
         return new ErrorResponse(e.getMessage());
     }
